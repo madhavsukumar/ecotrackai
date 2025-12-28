@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoTrack AI - Carbon Estimator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <nav class="bg-green-700 text-white p-4 shadow-lg">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <i class="fas fa-leaf"></i> EcoTrack AI
+            </h1>
+            <span class="text-sm opacity-80">Personal Carbon Tracker</span>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="grid md:grid-cols-2 gap-8">
+            
+            <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800">New Transaction</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600">Bank Description</label>
+                        <input type="text" id="desc" placeholder="e.g. Uber, Starbucks, Shell" 
+                               class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600">Amount Spent ($)</label>
+                        <input type="number" id="amount" placeholder="0.00" 
+                               class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                    <button onclick="analyzeTransaction()" 
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-200">
+                        Analyze Impact
+                    </button>
+                </div>
+            </div>
+
+            <div id="resultCard" class="bg-green-50 p-6 rounded-xl border-2 border-green-200 flex flex-col items-center justify-center text-center hidden">
+                <p class="text-green-700 font-medium uppercase tracking-widest text-sm">Estimated Impact</p>
+                <h3 id="resCategory" class="text-2xl font-bold text-slate-800 mt-2">Transport</h3>
+                <div class="my-4">
+                    <span id="resCO2" class="text-5xl font-black text-green-600">0.00</span>
+                    <span class="text-green-600 font-bold text-xl">kg CO2</span>
+                </div>
+                <p id="resAdvice" class="text-slate-600 text-sm italic">That's like driving a car for 5 miles.</p>
+            </div>
+
+            <div id="placeholderCard" class="bg-slate-100 p-6 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400">
+                Enter transaction details to see AI analysis
+            </div>
+
+        </div>
+
+        <div class="mt-12">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Transaction History</h2>
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-slate-600 text-sm uppercase">
+                        <tr>
+                            <th class="p-4">Merchant</th>
+                            <th class="p-4">Category</th>
+                            <th class="p-4 text-right">CO2 (kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody" class="divide-y divide-slate-100">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // AI Logic: Category Mapping
+        const CATEGORIES = {
+            transport: { keywords: ['uber', 'lyft', 'shell', 'chevron', 'gas', 'oil', 'train', 'bus'], factor: 0.45, advice: "Consider walking or cycling for short trips." },
+            food: { keywords: ['starbucks', 'mcdonalds', 'restaurant', 'cafe', 'grocery', 'whole foods', 'walmart'], factor: 0.25, advice: "Buying local produce reduces transport emissions." },
+            travel: { keywords: ['delta', 'airline', 'hotel', 'airbnb', 'flight', 'expedia'], factor: 0.80, advice: "High altitude emissions have a larger climate impact." },
+            shopping: { keywords: ['amazon', 'zara', 'nike', 'apple', 'target', 'store'], factor: 0.15, advice: "Second-hand shopping is the most eco-friendly choice." }
+        };
+
+        function analyzeTransaction() {
+            const desc = document.getElementById('desc').value.toLowerCase();
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if (!desc || isNaN(amount)) {
+                alert("Please enter a valid description and amount.");
+                return;
+            }
+
+            // AI "Brain": Finding the category based on keywords
+            let detectedCat = "General Spending";
+            let factor = 0.10;
+            let advice = "Every small change helps the planet.";
+
+            for (const [cat, data] of Object.entries(CATEGORIES)) {
+                if (data.keywords.some(kw => desc.includes(kw))) {
+                    detectedCat = cat.charAt(0).toUpperCase() + cat.slice(1);
+                    factor = data.factor;
+                    advice = data.advice;
+                    break;
+                }
+            }
+
+            const co2 = (amount * factor).toFixed(2);
+
+            // Update UI
+            document.getElementById('resCategory').innerText = detectedCat;
+            document.getElementById('resCO2').innerText = co2;
+            document.getElementById('resAdvice').innerText = advice;
+            
+            document.getElementById('placeholderCard').classList.add('hidden');
+            document.getElementById('resultCard').classList.remove('hidden');
+
+            // Add to Table
+            const table = document.getElementById('historyBody');
+            const row = `<tr>
+                <td class="p-4 font-medium text-slate-800">${desc}</td>
+                <td class="p-4 text-slate-600">${detectedCat}</td>
+                <td class="p-4 text-right font-bold text-green-600">${co2} kg</td>
+            </tr>`;
+            table.innerHTML = row + table.innerHTML;
+        }
+    </script>
+</body>
+</html>
